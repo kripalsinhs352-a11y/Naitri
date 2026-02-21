@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Manager Pro - Local</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --accent: #2980b9; --danger: #c0392b; --white: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 80px; background: #f4f7f6; }
+        .content { padding: 15px; }
+        .card { background: var(--white); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--white); display: flex; justify-content: space-around; border-top: 1px solid #ddd; z-index: 1000; height: 60px; }
+        .nav-item { padding: 10px; text-align: center; cursor: pointer; flex: 1; color: #7f8c8d; font-size: 10px; }
+        .nav-item.active-nav { color: var(--accent); font-weight: bold; border-top: 3px solid var(--accent); }
+        input, select, textarea, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
+        button { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-del { background: var(--danger); width: auto; padding: 5px 10px; font-size: 11px; border-radius: 4px; color: white; border: none; cursor: pointer; }
+        .section { display: none; }
+        .active { display: block; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f8f9fa; }
+        .total-row { background: #e8f4fd; font-weight: bold; }
+        .leave-box { display: flex; align-items: center; gap: 10px; background: #fff3f3; padding: 10px; border: 1px solid #ffcdd2; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="content">
+    <div id="personEntry" class="section active">
+        <div class="card">
+            <h3>Employee Entry</h3>
+            <label>Date:</label><input type="date" id="pDate">
+            <label>Employee:</label><select id="pPerson"></select>
+            
+            <div class="leave-box">
+                <input type="checkbox" id="pIsLeave" style="width:20px; margin:0;" onchange="toggleLeave(this.checked)">
+                <label for="pIsLeave"><b>આજે રજા છે? (Leave)</b></label>
+            </div>
+
+            <label>Item:</label><select id="pItem"></select>
+            <label>Qty:</label><input type="number" id="pQty" value="1">
+            <label>In Time:</label><input type="time" id="pInTime">
+            <label>Out Time:</label><input type="time" id="pOutTime">
+            <label>Note:</label><textarea id="pNote"></textarea>
+            <button onclick="saveLog('PERSON')">Save Entry</button>
+        </div>
+    </div>
+
+    <div id="externalEntry" class="section">
+        <div class="card">
+            <h3>Barni Item</h3>
+            <label>From:</label><input type="date" id="bFrom">
+            <label>To:</label><input type="date" id="bTo">
+            <button onclick="loadBarniLogs()">Filter Barni</button>
+            <hr>
+            <label>New Entry:</label>
+            <input type="date" id="bDate">
+            <select id="bItem"></select>
+            <select id="bName"></select>
+            <input type="number" id="bQty" placeholder="Pieces (Qty)">
+            <textarea id="bNote" placeholder="Note"></textarea>
+            <button onclick="saveLog('BARNI')" style="background: #e67e22;">Save Barni</button>
+            <button onclick="downloadBarniPDF()" style="background: #27ae60;">Download Barni PDF</button>
+        </div>
+        <div id="barniListContainer"></div>
+    </div>
+
+    <div id="report" class="section">
+        <div class="card">
+            <h3>Report</h3>
+            <input type="date" id="rfDate"> To <input type="date" id="rtDate">
+            <button onclick="loadMainReport()">View Report</button>
+            <button id="pdfBtn" style="display:none; background:green;" onclick="downloadMainPDF()">Download PDF</button>
+        </div>
+        <div id="reportOutput"></div>
+    </div>
+
+    <div id="activity" class="section">
+        <div class="card">
+            <h3>Recent Activity</h3>
+            <div id="activityLogs"></div>
+        </div>
+    </div>
+
+    <div id="setting" class="section">
+        <div class="card">
+            <h3>Add Master</h3>
+            <input type="text" id="setVal" placeholder="Name/Item">
+            <select id="setCat">
+                <option value="persons">Employee</option>
+                <option value="items">Item</option>
+                <option value="bItems">Barni Item</option>
+                <option value="bNames">Barni Vender</option>
+            </select>
+            <button onclick="addMaster()">Add</button>
+            <button onclick="syncWithFirebase()" style="background:#8e44ad;">🔄 Sync with Firebase</button>
+        </div>
+        <div id="masterLists"></div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active-nav" onclick="showTab('personEntry', this)">👤<br>Entry</div>
+    <div class="nav-item" onclick="showTab('externalEntry', this)">🚚<br>Barni</div>
+    <div class="nav-item" onclick="showTab('report', this)">📊<br>Report</div>
+    <div class="nav-item" onclick="showTab('activity', this)">🕒<br>Activity</div>
+    <div class="nav-item" onclick="showTab('setting', this)">⚙️<br>Setting</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0RtJmMYwO45OjacHnpcv298DRBOOz1E0",
+    authDomain: "naitri-a5975.firebaseapp.com",
+    databaseURL: "https://naitri-a5975-default-rtdb.firebaseio.com/", 
+    projectId: "naitri-a5975",
+    storageBucket: "naitri-a5975.firebasestorage.app",
+    messagingSenderId: "414479436661",
+    appId: "1:414479436661:web:b1f66ea5b3844abfb2a13c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const fb_db = getDatabase(app);
+
+  // ૧. ડેટા લાઈવ ખેંચવા માટે
+  onValue(ref(fb_db, 'sync_data/'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        if(data.logs) db.logs = data.logs;
+        if(data.masters) {
+            db.items = data.masters.items || [];
+            db.persons = data.masters.persons || [];
+            db.bItems = data.masters.bItems || [];
+            db.bNames = data.masters.bNames || [];
+        }
+        saveToLocalStorage();
+        updateDropdowns();
+    }
+  });
+
+  // ૨. Firebase માં ડેટા મોકલવા માટેનું ફંક્શન
+  window.syncToFB = () => {
+    set(ref(fb_db, 'sync_data/'), {
+        logs: db.logs,
+        masters: { items: db.items, persons: db.persons, bItems: db.bItems, bNames: db.bNames }
+    });
+  };
+</script>
+
+<script>
+// --- બધું જ જૂનું લોજિક અહીંથી શરૂ થાય છે ---
+let db = JSON.parse(localStorage.getItem('bizV4')) || { items:[], persons:[], bItems:[], bNames:[], logs:[] };
+
+function saveToLocalStorage() {
+    localStorage.setItem('bizV4', JSON.stringify(db));
+}
+
+function toggleLeave(isLeave) {
+    let fields = ['pItem', 'pQty', 'pInTime', 'pOutTime'];
+    fields.forEach(id => document.getElementById(id).disabled = isLeave);
+    if(isLeave) {
+        document.getElementById('pInTime').value = "";
+        document.getElementById('pOutTime').value = "";
+    }
+}
+
+function formatHrs(decimalHours) {
+    if (!decimalHours || decimalHours <= 0) return "0h 00m";
+    let hours = Math.floor(decimalHours);
+    let minutes = Math.round((decimalHours - hours) * 60);
+    if (minutes === 60) { hours += 1; minutes = 0; }
+    return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+}
+
+function showTab(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-nav'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active-nav');
+    updateDropdowns();
+    if(id === 'activity') loadActivity();
+    if(id === 'setting') renderMaster();
+    if(id === 'externalEntry') loadBarniLogs();
+}
+
+document.querySelectorAll('input[type="date"]').forEach(i => i.value = new Date().toISOString().split('T')[0]);
+
+function updateDropdowns() {
+    const fill = (id, arr) => {
+        let el = document.getElementById(id);
+        if(el) el.innerHTML = arr.map(a => `<option>${a}</option>`).join('');
+    };
+    fill('pPerson', db.persons); fill('pItem', db.items);
+    fill('bItem', db.bItems); fill('bName', db.bNames);
+}
+
+function t12(t) {
+    if(!t) return '-';
+    let [h, m] = t.split(':');
+    let am = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${am}`;
+}
+
+function getHrs(s, e) {
+    if(!s || !e) return 0;
+    let diff = (new Date("1970-01-01 " + e) - new Date("1970-01-01 " + s)) / 3600000;
+    return diff > 0 ? diff : 0;
+}
+
+function saveLog(type) {
+    let isLeave = document.getElementById('pIsLeave') ? document.getElementById('pIsLeave').checked : false;
+    let entry = (type==='PERSON') ? {
+        type, date: document.getElementById('pDate').value,
+        name: document.getElementById('pPerson').value, 
+        item: isLeave ? "રજા (Leave)" : document.getElementById('pItem').value,
+        qty: isLeave ? "0" : document.getElementById('pQty').value, 
+        inT: isLeave ? "" : document.getElementById('pInTime').value,
+        outT: isLeave ? "" : document.getElementById('pOutTime').value, 
+        note: document.getElementById('pNote').value,
+        isLeave: isLeave
+    } : {
+        type, date: document.getElementById('bDate').value,
+        item: document.getElementById('bItem').value, name: document.getElementById('bName').value,
+        qty: document.getElementById('bQty').value, note: document.getElementById('bNote').value
+    };
+    
+    db.logs.push(entry);
+    saveToLocalStorage();
+
+    // Firebase Sync
+    if(window.syncToFB) window.syncToFB();
+    
+    alert('ડેટા સેવ થઈ ગયો છે!');
+    if(type==='PERSON') {
+        document.getElementById('pIsLeave').checked = false;
+        toggleLeave(false);
+    }
+    if(type==='BARNI') loadBarniLogs();
+}
+
+function deleteReportEntry(index) {
+    if(confirm('શું તમે ખરેખર આ એન્ટ્રી કાઢી નાખવા માંગો છો?')) {
+        db.logs.splice(index, 1);
+        saveToLocalStorage();
+        if(window.syncToFB) window.syncToFB();
+        loadMainReport();
+    }
+}
+
+function loadBarniLogs() {
+    let f = document.getElementById('bFrom').value;
+    let t = document.getElementById('bTo').value;
+    let logs = db.logs.filter(l => l.type === 'BARNI' && l.date >= f && l.date <= t);
+    
+    if (logs.length === 0) {
+        document.getElementById('barniListContainer').innerHTML = "<p style='text-align:center;'>કોઈ ડેટા ઉપલબ્ધ નથી.</p>";
+        return;
+    }
+
+    let html = '<h3>Vender Wise Report</h3>';
+    let groupedByVender = {};
+    logs.forEach(l => {
+        if (!groupedByVender[l.name]) groupedByVender[l.name] = [];
+        groupedByVender[l.name].push(l);
+    });
+
+    for (let vender in groupedByVender) {
+        html += `<div class="card" style="border-left: 5px solid #e67e22;">
+            <h4 style="margin:0; color:#2c3e50;">વેન્ડર: ${vender}</h4>
+            <table>
+                <tr><th>તારીખ</th><th>આઈટમ</th><th>જથ્થો (Qty)</th><th>Action</th></tr>`;
+        
+        let venderTotal = 0;
+        groupedByVender[vender].forEach(l => {
+            let idx = db.logs.indexOf(l);
+            venderTotal += parseFloat(l.qty || 0);
+            html += `<tr><td>${l.date}</td><td>${l.item}</td><td>${l.qty}</td>
+            <td><button class="btn-del" onclick="delLog(${idx})">X</button></td></tr>`;
+        });
+        html += `<tr class="total-row"><td colspan="2" style="text-align:right;">Total:</td><td colspan="2">${venderTotal}</td></tr></table></div>`;
+    }
+    document.getElementById('barniListContainer').innerHTML = html;
+}
+
+function loadMainReport() {
+    let f = document.getElementById('rfDate').value;
+    let t = document.getElementById('rtDate').value;
+    let logs = db.logs.filter(l => l.type === 'PERSON' && l.date >= f && l.date <= t);
+    let html = '';
+    let grandTotal = 0;
+
+    let names = [...new Set(logs.map(l => l.name))];
+    names.forEach(n => {
+        let nLogs = logs.filter(l => l.name === n);
+        let grouped = {};
+        nLogs.forEach(l => {
+            if (!grouped[l.date]) grouped[l.date] = { items: [], qtys: [], firstIn: l.inT, lastOut: l.outT, indices: [] };
+            let noteStr = l.note ? ` (${l.note})` : "";
+            grouped[l.date].items.push(l.item + noteStr);
+            grouped[l.date].qtys.push(l.qty || 0);
+            grouped[l.date].indices.push(db.logs.indexOf(l));
+            if (l.inT && (!grouped[l.date].firstIn || l.inT < grouped[l.date].firstIn)) grouped[l.date].firstIn = l.inT;
+            if (l.outT && (!grouped[l.date].lastOut || l.outT > grouped[l.date].lastOut)) grouped[l.date].lastOut = l.outT;
+        });
+
+        html += `<h4>${n}</h4><table><tr><th>Date</th><th>Item</th><th>Qty</th><th>In</th><th>Out</th><th>Time</th><th>Action</th></tr>`;
+        Object.keys(grouped).sort().forEach(date => {
+            let dayHrs = getHrs(grouped[date].firstIn, grouped[date].lastOut);
+            grandTotal += dayHrs;
+            let delBtns = grouped[date].indices.map(idx => `<button class="btn-del" onclick="deleteReportEntry(${idx})">X</button>`).join("<br>");
+            html += `<tr>
+                <td>${date}</td>
+                <td>${grouped[date].items.join("<br>")}</td>
+                <td>${grouped[date].qtys.join("<br>")}</td>
+                <td>${t12(grouped[date].firstIn)}</td>
+                <td>${t12(grouped[date].lastOut)}</td>
+                <td>${formatHrs(dayHrs)}</td>
+                <td>${delBtns}</td>
+            </tr>`;
+        });
+        html += `</table>`;
+    });
+    html += `<div class='card' style='margin-top:10px; background:#2c3e50; color:white;'>Grand Total: ${formatHrs(grandTotal)}</div>`;
+    document.getElementById('reportOutput').innerHTML = html;
+    document.getElementById('pdfBtn').style.display = 'block';
+}
+
+function loadActivity() {
+    let html = db.logs.slice(-15).reverse().map(l => 
+        `<div class="card" style="font-size:12px;"><b>${l.date}</b>: ${l.name} added ${l.item}</div>`
+    ).join('');
+    document.getElementById('activityLogs').innerHTML = html || 'No activity yet.';
+}
+
+function addMaster() {
+    let cat = document.getElementById('setCat').value;
+    let val = document.getElementById('setVal').value;
+    if(val) { 
+        db[cat].push(val); 
+        saveToLocalStorage();
+        if(window.syncToFB) window.syncToFB();
+        renderMaster(); 
+        document.getElementById('setVal').value = "";
+    }
+}
+
+function syncWithFirebase() {
+    if(window.syncToFB) {
+        window.syncToFB();
+        alert("માસ્ટર ડેટા Firebase માં સિંક થઈ ગયો છે!");
+    }
+}
+
+function renderMaster() {
+    let cats = ['persons', 'items', 'bItems', 'bNames'];
+    let html = '';
+    cats.forEach(c => {
+        html += `<div class="card"><b>${c.toUpperCase()}</b><hr>`;
+        db[c].forEach((v, i) => {
+            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">${v} 
+            <button class="btn-del" onclick="db['${c}'].splice(${i},1); saveToLocalStorage(); renderMaster(); if(window.syncToFB) window.syncToFB();">Del</button></div>`;
+        });
+        html += `</div>`;
+    });
+    document.getElementById('masterLists').innerHTML = html;
+}
+
+function delLog(i) { 
+    if(confirm('Delete?')) { 
+        db.logs.splice(i,1); 
+        saveToLocalStorage();
+        if(window.syncToFB) window.syncToFB();
+        loadBarniLogs(); 
+    } 
+}
+
+function downloadMainPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let f = document.getElementById('rfDate').value;
+    let t = document.getElementById('rtDate').value;
+    
+    doc.setFontSize(16);
+    doc.text(`Employee Report`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Period: ${f} to ${t}`, 14, 22);
+    
+    let logs = db.logs.filter(l => l.type === 'PERSON' && l.date >= f && l.date <= t);
+    let names = [...new Set(logs.map(l => l.name))];
+    let y = 30;
+
+    names.forEach(n => {
+        doc.setFontSize(12);
+        doc.text(`Name: ${n}`, 14, y);
+        let nLogs = logs.filter(l => l.name === n);
+        let grouped = {};
+        nLogs.forEach(l => {
+            if (!grouped[l.date]) grouped[l.date] = { items: [], qtys: [], firstIn: l.inT, lastOut: l.outT };
+            grouped[l.date].items.push(l.item + (l.note ? " ("+l.note+")" : ""));
+            grouped[l.date].qtys.push(l.qty || 0);
+            if (l.inT && (!grouped[l.date].firstIn || l.inT < grouped[l.date].firstIn)) grouped[l.date].firstIn = l.inT;
+            if (l.outT && (!grouped[l.date].lastOut || l.outT > grouped[l.date].lastOut)) grouped[l.date].lastOut = l.outT;
+        });
+        let rows = Object.keys(grouped).sort().map(date => [
+            date, 
+            grouped[date].items.join("\n"), 
+            grouped[date].qtys.join("\n"),
+            t12(grouped[date].firstIn), 
+            t12(grouped[date].lastOut), 
+            formatHrs(getHrs(grouped[date].firstIn, grouped[date].lastOut))
+        ]);
+        doc.autoTable({ head:[['Date', 'Item', 'Qty', 'In', 'Out', 'Time']], body: rows, startY: y+2 });
+        y = doc.lastAutoTable.finalY + 10;
+        if (y > 270) { doc.addPage(); y = 20; }
+    });
+    doc.save(`Report_${f}_to_${t}.pdf`);
+}
+
+function downloadBarniPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let f = document.getElementById('bFrom').value;
+    let t = document.getElementById('bTo').value;
+    doc.text(`Barni Report (Vender Wise): ${f} to ${t}`, 14, 15);
+    
+    let logs = db.logs.filter(l => l.type === 'BARNI' && l.date >= f && l.date <= t);
+    let venders = [...new Set(logs.map(l => l.name))];
+    let y = 25;
+
+    venders.forEach(v => {
+        doc.setFontSize(12);
+        doc.text(`Vender: ${v}`, 14, y);
+        let venderTotal = 0;
+        let rows = logs.filter(l => l.name === v).map(l => {
+            venderTotal += parseFloat(l.qty || 0);
+            return [l.date, l.item, l.qty, l.note];
+        });
+        rows.push([{content: 'Total', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, {content: venderTotal.toString(), styles: {fontStyle: 'bold'}}, '']);
+        doc.autoTable({ head:[['Date', 'Item', 'Qty', 'Note']], body: rows, startY: y+2 });
+        y = doc.lastAutoTable.finalY + 10;
+        if (y > 270) { doc.addPage(); y = 20; }
+    });
+    doc.save("Barni_Report.pdf");
+}
+
+updateDropdowns();
+</script>
+</body>
+</html>
