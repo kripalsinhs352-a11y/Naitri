@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="gu">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Manager Pro - Local</title>
+    <title>NAITRI ENGINEERING - Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -19,11 +19,10 @@
         .btn-del { background: var(--danger); width: auto; padding: 5px 10px; font-size: 11px; border-radius: 4px; color: white; border: none; cursor: pointer; }
         .section { display: none; }
         .active { display: block; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; font-size: 11px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
         th { background: #f8f9fa; }
-        .total-row { background: #e8f4fd; font-weight: bold; }
-        .leave-box { display: flex; align-items: center; gap: 10px; background: #fff3f3; padding: 10px; border: 1px solid #ffcdd2; border-radius: 8px; margin-bottom: 10px; }
+        .summary-card { background: #e8f4fd; border-left: 5px solid var(--accent); margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -33,70 +32,76 @@
         <div class="card">
             <h3>Employee Entry</h3>
             <label>Date:</label><input type="date" id="pDate">
-            <label>Employee:</label><select id="pPerson"></select>
-            
-            <div class="leave-box">
+            <label>Employee Name:</label><select id="pPerson"></select>
+            <div style="display: flex; align-items: center; gap: 10px; background: #fff3f3; padding: 10px; border: 1px solid #ffcdd2; border-radius: 8px; margin-bottom: 10px;">
                 <input type="checkbox" id="pIsLeave" style="width:20px; margin:0;" onchange="toggleLeave(this.checked)">
-                <label for="pIsLeave"><b>આજે રજા છે? (Leave)</b></label>
+                <label for="pIsLeave"><b>Is Today a Leave?</b></label>
             </div>
-
-            <label>Item:</label><select id="pItem"></select>
-            <label>Qty:</label><input type="number" id="pQty" value="1">
-            <label>In Time:</label><input type="time" id="pInTime">
-            <label>Out Time:</label><input type="time" id="pOutTime">
-            <label>Note:</label><textarea id="pNote"></textarea>
+            <label>Item Name:</label><select id="pItem"></select>
+            <label>Quantity:</label><input type="number" id="pQty" value="1">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;"><label>In Time:</label><input type="time" id="pInTime"></div>
+                <div style="flex:1;"><label>Out Time:</label><input type="time" id="pOutTime"></div>
+            </div>
+            <label>Lunch Break:</label><input type="time" id="pLunch" value="01:00">
+            <label>Note:</label><textarea id="pNote" placeholder="Additional details..."></textarea>
             <button onclick="saveLog('PERSON')">Save Entry</button>
         </div>
     </div>
 
     <div id="externalEntry" class="section">
         <div class="card">
-            <h3>Barni Item</h3>
-            <label>From:</label><input type="date" id="bFrom">
-            <label>To:</label><input type="date" id="bTo">
-            <button onclick="loadBarniLogs()">Filter Barni</button>
+            <h3>Barni Item (External)</h3>
+            <div style="display: flex; gap: 5px;">
+                <input type="date" id="bFrom" placeholder="From"> 
+                <input type="date" id="bTo" placeholder="To">
+            </div>
+            <button onclick="loadBarniLogs()">Filter/View All Barni</button>
+            <button id="barniPdfBtn" style="display:none; background:green;" onclick="downloadBarniPDF()">Download Barni PDF</button>
             <hr>
             <label>New Entry:</label>
             <input type="date" id="bDate">
             <select id="bItem"></select>
             <select id="bName"></select>
-            <input type="number" id="bQty" placeholder="Pieces (Qty)">
-            <textarea id="bNote" placeholder="Note"></textarea>
-            <button onclick="saveLog('BARNI')" style="background: #e67e22;">Save Barni</button>
-            <button onclick="downloadBarniPDF()" style="background: #27ae60;">Download Barni PDF</button>
+            <input type="number" id="bQty" placeholder="Quantity">
+            <textarea id="bNote" placeholder="Note/Details"></textarea>
+            <button onclick="saveLog('BARNI')" style="background: #e67e22;">Save Barni Entry</button>
         </div>
         <div id="barniListContainer"></div>
     </div>
 
     <div id="report" class="section">
         <div class="card">
-            <h3>Report</h3>
-            <input type="date" id="rfDate"> To <input type="date" id="rtDate">
+            <h3>Work Report</h3>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="date" id="rfDate"> To <input type="date" id="rtDate">
+            </div>
+            <p style="font-size: 10px; color: gray;">*Leave blank to see all history</p>
             <button onclick="loadMainReport()">View Report</button>
-            <button id="pdfBtn" style="display:none; background:green;" onclick="downloadMainPDF()">Download PDF</button>
+            <button id="pdfBtn" style="display:none; background:green;" onclick="downloadMainPDF()">Download Report PDF</button>
         </div>
         <div id="reportOutput"></div>
     </div>
 
     <div id="activity" class="section">
         <div class="card">
-            <h3>Recent Activity</h3>
+            <h3>Recent Activity History</h3>
             <div id="activityLogs"></div>
         </div>
     </div>
 
     <div id="setting" class="section">
         <div class="card">
-            <h3>Add Master</h3>
-            <input type="text" id="setVal" placeholder="Name/Item">
+            <h3>Master Settings</h3>
+            <input type="text" id="setVal" placeholder="Enter Name or Item">
             <select id="setCat">
-                <option value="persons">Employee</option>
-                <option value="items">Item</option>
-                <option value="bItems">Barni Item</option>
-                <option value="bNames">Barni Vender</option>
+                <option value="persons">Employee List</option>
+                <option value="items">Item List</option>
+                <option value="bItems">Barni Item List</option>
+                <option value="bNames">Barni Vendor List</option>
             </select>
-            <button onclick="addMaster()">Add</button>
-            <button onclick="syncWithFirebase()" style="background:#8e44ad;">🔄 Sync with Firebase</button>
+            <button onclick="addMaster()">Add New to List</button>
+            <button onclick="syncToFB()" style="background:#8e44ad;">🔄 Sync with Cloud</button>
         </div>
         <div id="masterLists"></div>
     </div>
@@ -127,7 +132,6 @@
   const app = initializeApp(firebaseConfig);
   const fb_db = getDatabase(app);
 
-  // ૧. ડેટા લાઈવ ખેંચવા માટે
   onValue(ref(fb_db, 'sync_data/'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -138,67 +142,42 @@
             db.bItems = data.masters.bItems || [];
             db.bNames = data.masters.bNames || [];
         }
+        if(data.activity) db.activity = data.activity;
         saveToLocalStorage();
         updateDropdowns();
+        if(document.getElementById('setting').classList.contains('active')) renderMaster();
     }
   });
 
-  // ૨. Firebase માં ડેટા મોકલવા માટેનું ફંક્શન
   window.syncToFB = () => {
     set(ref(fb_db, 'sync_data/'), {
         logs: db.logs,
-        masters: { items: db.items, persons: db.persons, bItems: db.bItems, bNames: db.bNames }
+        masters: { items: db.items, persons: db.persons, bItems: db.bItems, bNames: db.bNames },
+        activity: db.activity || []
     });
+    console.log("Data Synced with Cloud!");
   };
 </script>
 
 <script>
-// --- બધું જ જૂનું લોજિક અહીંથી શરૂ થાય છે ---
-let db = JSON.parse(localStorage.getItem('bizV4')) || { items:[], persons:[], bItems:[], bNames:[], logs:[] };
+let db = JSON.parse(localStorage.getItem('bizV4')) || { items:[], persons:[], bItems:[], bNames:[], logs:[], activity:[] };
 
-function saveToLocalStorage() {
-    localStorage.setItem('bizV4', JSON.stringify(db));
+function saveToLocalStorage() { localStorage.setItem('bizV4', JSON.stringify(db)); }
+
+function addActivity(msg) {
+    if(!db.activity) db.activity = [];
+    db.activity.push(`${new Date().toLocaleString()} - ${msg}`);
+    if(db.activity.length > 30) db.activity.shift();
 }
 
-function toggleLeave(isLeave) {
-    let fields = ['pItem', 'pQty', 'pInTime', 'pOutTime'];
-    fields.forEach(id => document.getElementById(id).disabled = isLeave);
-    if(isLeave) {
-        document.getElementById('pInTime').value = "";
-        document.getElementById('pOutTime').value = "";
-    }
+function formatDate(d) { if(!d) return "-"; let [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; }
+function timeToDec(t) { if(!t) return 0; let [h, m] = t.split(':').map(Number); return h + (m/60); }
+function formatHrs(dec) {
+    if(dec <= 0) return "0h 00m";
+    let h = Math.floor(dec);
+    let m = Math.round((dec - h) * 60);
+    return `${h}h ${m.toString().padStart(2, '0')}m`;
 }
-
-function formatHrs(decimalHours) {
-    if (!decimalHours || decimalHours <= 0) return "0h 00m";
-    let hours = Math.floor(decimalHours);
-    let minutes = Math.round((decimalHours - hours) * 60);
-    if (minutes === 60) { hours += 1; minutes = 0; }
-    return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
-}
-
-function showTab(id, el) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-nav'));
-    document.getElementById(id).classList.add('active');
-    el.classList.add('active-nav');
-    updateDropdowns();
-    if(id === 'activity') loadActivity();
-    if(id === 'setting') renderMaster();
-    if(id === 'externalEntry') loadBarniLogs();
-}
-
-document.querySelectorAll('input[type="date"]').forEach(i => i.value = new Date().toISOString().split('T')[0]);
-
-function updateDropdowns() {
-    const fill = (id, arr) => {
-        let el = document.getElementById(id);
-        if(el) el.innerHTML = arr.map(a => `<option>${a}</option>`).join('');
-    };
-    fill('pPerson', db.persons); fill('pItem', db.items);
-    fill('bItem', db.bItems); fill('bName', db.bNames);
-}
-
 function t12(t) {
     if(!t) return '-';
     let [h, m] = t.split(':');
@@ -207,177 +186,114 @@ function t12(t) {
     return `${h}:${m} ${am}`;
 }
 
-function getHrs(s, e) {
-    if(!s || !e) return 0;
-    let diff = (new Date("1970-01-01 " + e) - new Date("1970-01-01 " + s)) / 3600000;
-    return diff > 0 ? diff : 0;
+function toggleLeave(isl) {
+    ['pItem', 'pQty', 'pInTime', 'pOutTime', 'pLunch'].forEach(id => document.getElementById(id).disabled = isl);
+}
+
+function showTab(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-nav'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active-nav');
+    updateDropdowns();
+    if(id === 'activity') renderActivity();
+    if(id === 'setting') renderMaster();
+}
+
+function updateDropdowns() {
+    const fill = (id, arr) => {
+        let el = document.getElementById(id);
+        if(el) el.innerHTML = (arr || []).map(a => `<option>${a}</option>`).join('');
+    };
+    fill('pPerson', db.persons); fill('pItem', db.items);
+    fill('bItem', db.bItems); fill('bName', db.bNames);
 }
 
 function saveLog(type) {
-    let isLeave = document.getElementById('pIsLeave') ? document.getElementById('pIsLeave').checked : false;
-    let entry = (type==='PERSON') ? {
-        type, date: document.getElementById('pDate').value,
-        name: document.getElementById('pPerson').value, 
-        item: isLeave ? "રજા (Leave)" : document.getElementById('pItem').value,
-        qty: isLeave ? "0" : document.getElementById('pQty').value, 
-        inT: isLeave ? "" : document.getElementById('pInTime').value,
-        outT: isLeave ? "" : document.getElementById('pOutTime').value, 
-        note: document.getElementById('pNote').value,
-        isLeave: isLeave
-    } : {
-        type, date: document.getElementById('bDate').value,
-        item: document.getElementById('bItem').value, name: document.getElementById('bName').value,
-        qty: document.getElementById('bQty').value, note: document.getElementById('bNote').value
+    let dateVal = document.getElementById(type==='PERSON' ? 'pDate' : 'bDate').value;
+    if(!dateVal) { alert("Please select a date"); return; }
+    
+    let entry = {
+        type, 
+        date: dateVal,
+        name: document.getElementById(type==='PERSON' ? 'pPerson' : 'bName').value,
+        item: type==='PERSON' && document.getElementById('pIsLeave').checked ? "LEAVE" : document.getElementById(type==='PERSON' ? 'pItem' : 'bItem').value,
+        qty: document.getElementById(type==='PERSON' ? 'pQty' : 'bQty').value,
+        inT: type==='PERSON' ? document.getElementById('pInTime').value : "",
+        outT: type==='PERSON' ? document.getElementById('pOutTime').value : "",
+        lunch: type==='PERSON' ? document.getElementById('pLunch').value : "01:00",
+        note: document.getElementById(type==='PERSON' ? 'pNote' : 'bNote').value
     };
-    
     db.logs.push(entry);
+    addActivity(`New Entry: ${entry.name} (${type})`);
     saveToLocalStorage();
-
-    // Firebase Sync
     if(window.syncToFB) window.syncToFB();
-    
-    alert('ડેટા સેવ થઈ ગયો છે!');
-    if(type==='PERSON') {
-        document.getElementById('pIsLeave').checked = false;
-        toggleLeave(false);
-    }
-    if(type==='BARNI') loadBarniLogs();
+    alert('Entry Saved!');
 }
 
-function deleteReportEntry(index) {
-    if(confirm('શું તમે ખરેખર આ એન્ટ્રી કાઢી નાખવા માંગો છો?')) {
+// --- DELETE LOG FUNCTION ---
+window.deleteLog = (index, refreshType) => {
+    if(confirm("શું તમે આ એન્ટ્રી ડીલીટ કરવા માંગો છો?")) {
+        let deletedItem = db.logs[index];
+        addActivity(`Deleted: ${deletedItem.name} - ${deletedItem.item}`);
         db.logs.splice(index, 1);
         saveToLocalStorage();
         if(window.syncToFB) window.syncToFB();
-        loadMainReport();
-    }
-}
-
-function loadBarniLogs() {
-    let f = document.getElementById('bFrom').value;
-    let t = document.getElementById('bTo').value;
-    let logs = db.logs.filter(l => l.type === 'BARNI' && l.date >= f && l.date <= t);
-    
-    if (logs.length === 0) {
-        document.getElementById('barniListContainer').innerHTML = "<p style='text-align:center;'>કોઈ ડેટા ઉપલબ્ધ નથી.</p>";
-        return;
-    }
-
-    let html = '<h3>Vender Wise Report</h3>';
-    let groupedByVender = {};
-    logs.forEach(l => {
-        if (!groupedByVender[l.name]) groupedByVender[l.name] = [];
-        groupedByVender[l.name].push(l);
-    });
-
-    for (let vender in groupedByVender) {
-        html += `<div class="card" style="border-left: 5px solid #e67e22;">
-            <h4 style="margin:0; color:#2c3e50;">વેન્ડર: ${vender}</h4>
-            <table>
-                <tr><th>તારીખ</th><th>આઈટમ</th><th>જથ્થો (Qty)</th><th>Action</th></tr>`;
         
-        let venderTotal = 0;
-        groupedByVender[vender].forEach(l => {
-            let idx = db.logs.indexOf(l);
-            venderTotal += parseFloat(l.qty || 0);
-            html += `<tr><td>${l.date}</td><td>${l.item}</td><td>${l.qty}</td>
-            <td><button class="btn-del" onclick="delLog(${idx})">X</button></td></tr>`;
-        });
-        html += `<tr class="total-row"><td colspan="2" style="text-align:right;">Total:</td><td colspan="2">${venderTotal}</td></tr></table></div>`;
+        if(refreshType === 'MAIN') loadMainReport();
+        else loadBarniLogs();
+        alert("એન્ટ્રી ડીલીટ થઈ ગઈ છે.");
     }
-    document.getElementById('barniListContainer').innerHTML = html;
 }
 
 function loadMainReport() {
     let f = document.getElementById('rfDate').value;
     let t = document.getElementById('rtDate').value;
-    let logs = db.logs.filter(l => l.type === 'PERSON' && l.date >= f && l.date <= t);
     let html = '';
-    let grandTotal = 0;
+    let personLogs = db.logs.filter(l => l.type === 'PERSON');
+    let names = [...new Set(personLogs.map(d => d.name))];
 
-    let names = [...new Set(logs.map(l => l.name))];
+    if(names.length === 0) { html = '<p>No data found.</p>'; }
+
     names.forEach(n => {
-        let nLogs = logs.filter(l => l.name === n);
-        let grouped = {};
-        nLogs.forEach(l => {
-            if (!grouped[l.date]) grouped[l.date] = { items: [], qtys: [], firstIn: l.inT, lastOut: l.outT, indices: [] };
-            let noteStr = l.note ? ` (${l.note})` : "";
-            grouped[l.date].items.push(l.item + noteStr);
-            grouped[l.date].qtys.push(l.qty || 0);
-            grouped[l.date].indices.push(db.logs.indexOf(l));
-            if (l.inT && (!grouped[l.date].firstIn || l.inT < grouped[l.date].firstIn)) grouped[l.date].firstIn = l.inT;
-            if (l.outT && (!grouped[l.date].lastOut || l.outT > grouped[l.date].lastOut)) grouped[l.date].lastOut = l.outT;
-        });
-
-        html += `<h4>${n}</h4><table><tr><th>Date</th><th>Item</th><th>Qty</th><th>In</th><th>Out</th><th>Time</th><th>Action</th></tr>`;
-        Object.keys(grouped).sort().forEach(date => {
-            let dayHrs = getHrs(grouped[date].firstIn, grouped[date].lastOut);
-            grandTotal += dayHrs;
-            let delBtns = grouped[date].indices.map(idx => `<button class="btn-del" onclick="deleteReportEntry(${idx})">X</button>`).join("<br>");
-            html += `<tr>
-                <td>${date}</td>
-                <td>${grouped[date].items.join("<br>")}</td>
-                <td>${grouped[date].qtys.join("<br>")}</td>
-                <td>${t12(grouped[date].firstIn)}</td>
-                <td>${t12(grouped[date].lastOut)}</td>
-                <td>${formatHrs(dayHrs)}</td>
-                <td>${delBtns}</td>
-            </tr>`;
+        html += `<h4>Operator: ${n}</h4><table>
+            <tr><th>Date</th><th>Item</th><th>Qty</th><th>In/Out</th><th>Total Time</th><th>Action</th></tr>`;
+        
+        db.logs.forEach((p, index) => {
+            if(p.type === 'PERSON' && p.name === n) {
+                if((f && p.date < f) || (t && p.date > t)) return;
+                let net = (p.inT && p.outT) ? (timeToDec(p.outT) - timeToDec(p.inT) - timeToDec(p.lunch || '01:00')) : 0;
+                html += `<tr>
+                    <td>${formatDate(p.date)}</td>
+                    <td>${p.item}</td>
+                    <td>${p.qty}</td>
+                    <td>${t12(p.inT)} - ${t12(p.outT)}</td>
+                    <td><b>${formatHrs(net)}</b></td>
+                    <td><button class="btn-del" onclick="deleteLog(${index}, 'MAIN')">Delete</button></td>
+                </tr>`;
+            }
         });
         html += `</table>`;
     });
-    html += `<div class='card' style='margin-top:10px; background:#2c3e50; color:white;'>Grand Total: ${formatHrs(grandTotal)}</div>`;
+
+    // Summary Section
+    html += `<div class="card summary-card"><h3>📊 Category Summary</h3>`;
+    names.forEach(n => {
+        let summary = {};
+        db.logs.filter(l => {
+            if(l.type !== 'PERSON' || l.name !== n) return false;
+            if((f && l.date < f) || (t && l.date > t)) return false;
+            return true;
+        }).forEach(l => { summary[l.item] = (summary[l.item] || 0) + Number(l.qty); });
+        
+        html += `<b>${n}</b><table>`;
+        for(let item in summary) html += `<tr><td>${item}</td><td><b>${summary[item]}</b></td></tr>`;
+        html += `</table><br>`;
+    });
+    html += `</div>`;
+
     document.getElementById('reportOutput').innerHTML = html;
     document.getElementById('pdfBtn').style.display = 'block';
-}
-
-function loadActivity() {
-    let html = db.logs.slice(-15).reverse().map(l => 
-        `<div class="card" style="font-size:12px;"><b>${l.date}</b>: ${l.name} added ${l.item}</div>`
-    ).join('');
-    document.getElementById('activityLogs').innerHTML = html || 'No activity yet.';
-}
-
-function addMaster() {
-    let cat = document.getElementById('setCat').value;
-    let val = document.getElementById('setVal').value;
-    if(val) { 
-        db[cat].push(val); 
-        saveToLocalStorage();
-        if(window.syncToFB) window.syncToFB();
-        renderMaster(); 
-        document.getElementById('setVal').value = "";
-    }
-}
-
-function syncWithFirebase() {
-    if(window.syncToFB) {
-        window.syncToFB();
-        alert("માસ્ટર ડેટા Firebase માં સિંક થઈ ગયો છે!");
-    }
-}
-
-function renderMaster() {
-    let cats = ['persons', 'items', 'bItems', 'bNames'];
-    let html = '';
-    cats.forEach(c => {
-        html += `<div class="card"><b>${c.toUpperCase()}</b><hr>`;
-        db[c].forEach((v, i) => {
-            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">${v} 
-            <button class="btn-del" onclick="db['${c}'].splice(${i},1); saveToLocalStorage(); renderMaster(); if(window.syncToFB) window.syncToFB();">Del</button></div>`;
-        });
-        html += `</div>`;
-    });
-    document.getElementById('masterLists').innerHTML = html;
-}
-
-function delLog(i) { 
-    if(confirm('Delete?')) { 
-        db.logs.splice(i,1); 
-        saveToLocalStorage();
-        if(window.syncToFB) window.syncToFB();
-        loadBarniLogs(); 
-    } 
 }
 
 function downloadMainPDF() {
@@ -385,69 +301,117 @@ function downloadMainPDF() {
     const doc = new jsPDF();
     let f = document.getElementById('rfDate').value;
     let t = document.getElementById('rtDate').value;
-    
-    doc.setFontSize(16);
-    doc.text(`Employee Report`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Period: ${f} to ${t}`, 14, 22);
-    
-    let logs = db.logs.filter(l => l.type === 'PERSON' && l.date >= f && l.date <= t);
-    let names = [...new Set(logs.map(l => l.name))];
-    let y = 30;
+    let personLogs = db.logs.filter(l => l.type === 'PERSON');
+    let names = [...new Set(personLogs.map(d => d.name))];
+    let y = 20;
 
+    doc.text("NAITRI ENGINEERING - Work Report", 14, 15);
     names.forEach(n => {
-        doc.setFontSize(12);
-        doc.text(`Name: ${n}`, 14, y);
-        let nLogs = logs.filter(l => l.name === n);
-        let grouped = {};
-        nLogs.forEach(l => {
-            if (!grouped[l.date]) grouped[l.date] = { items: [], qtys: [], firstIn: l.inT, lastOut: l.outT };
-            grouped[l.date].items.push(l.item + (l.note ? " ("+l.note+")" : ""));
-            grouped[l.date].qtys.push(l.qty || 0);
-            if (l.inT && (!grouped[l.date].firstIn || l.inT < grouped[l.date].firstIn)) grouped[l.date].firstIn = l.inT;
-            if (l.outT && (!grouped[l.date].lastOut || l.outT > grouped[l.date].lastOut)) grouped[l.date].lastOut = l.outT;
+        doc.text(`Operator: ${n}`, 14, y);
+        let rows = [];
+        db.logs.forEach(p => {
+            if(p.type === 'PERSON' && p.name === n) {
+                if((f && p.date < f) || (t && p.date > t)) return;
+                let net = (p.inT && p.outT) ? (timeToDec(p.outT) - timeToDec(p.inT) - timeToDec(p.lunch || '01:00')) : 0;
+                rows.push([formatDate(p.date), p.item, p.qty, t12(p.inT), t12(p.outT), p.lunch || '01:00', formatHrs(net)]);
+            }
         });
-        let rows = Object.keys(grouped).sort().map(date => [
-            date, 
-            grouped[date].items.join("\n"), 
-            grouped[date].qtys.join("\n"),
-            t12(grouped[date].firstIn), 
-            t12(grouped[date].lastOut), 
-            formatHrs(getHrs(grouped[date].firstIn, grouped[date].lastOut))
-        ]);
-        doc.autoTable({ head:[['Date', 'Item', 'Qty', 'In', 'Out', 'Time']], body: rows, startY: y+2 });
+
+        doc.autoTable({ head: [['Date', 'Item', 'Qty', 'In', 'Out', 'Lunch', 'Time']], body: rows, startY: y + 2 });
         y = doc.lastAutoTable.finalY + 10;
-        if (y > 270) { doc.addPage(); y = 20; }
+        
+        if(y > 250) { doc.addPage(); y = 20; }
     });
-    doc.save(`Report_${f}_to_${t}.pdf`);
+    doc.save("Naitri_Work_Report.pdf");
+}
+
+function loadBarniLogs() {
+    let f = document.getElementById('bFrom').value, t = document.getElementById('bTo').value;
+    let html = '<h3>Barni Logs</h3>';
+    let vendors = [...new Set(db.logs.filter(l => l.type === 'BARNI').map(l => l.name))];
+    
+    vendors.forEach(n => {
+        html += `<div class="card"><b>Vendor: ${n}</b><table><tr><th>Date</th><th>Item</th><th>Qty</th><th>Action</th></tr>`;
+        db.logs.forEach((l, index) => {
+            if(l.type === 'BARNI' && l.name === n) {
+                if((f && l.date < f) || (t && l.date > t)) return;
+                html += `<tr><td>${formatDate(l.date)}</td><td>${l.item}</td><td>${l.qty}</td>
+                <td><button class="btn-del" onclick="deleteLog(${index}, 'BARNI')">Delete</button></td></tr>`;
+            }
+        });
+        html += `</table></div>`;
+    });
+    document.getElementById('barniListContainer').innerHTML = html;
+    document.getElementById('barniPdfBtn').style.display = 'block';
 }
 
 function downloadBarniPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    let f = document.getElementById('bFrom').value;
-    let t = document.getElementById('bTo').value;
-    doc.text(`Barni Report (Vender Wise): ${f} to ${t}`, 14, 15);
-    
-    let logs = db.logs.filter(l => l.type === 'BARNI' && l.date >= f && l.date <= t);
-    let venders = [...new Set(logs.map(l => l.name))];
-    let y = 25;
-
-    venders.forEach(v => {
-        doc.setFontSize(12);
-        doc.text(`Vender: ${v}`, 14, y);
-        let venderTotal = 0;
-        let rows = logs.filter(l => l.name === v).map(l => {
-            venderTotal += parseFloat(l.qty || 0);
-            return [l.date, l.item, l.qty, l.note];
-        });
-        rows.push([{content: 'Total', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, {content: venderTotal.toString(), styles: {fontStyle: 'bold'}}, '']);
-        doc.autoTable({ head:[['Date', 'Item', 'Qty', 'Note']], body: rows, startY: y+2 });
-        y = doc.lastAutoTable.finalY + 10;
-        if (y > 270) { doc.addPage(); y = 20; }
+    let f = document.getElementById('bFrom').value, t = document.getElementById('bTo').value;
+    let logs = db.logs.filter(l => {
+        if (l.type !== 'BARNI') return false;
+        if ((f && l.date < f) || (t && l.date > t)) return false;
+        return true;
     });
+
+    doc.text("NAITRI ENGINEERING - Barni Report", 14, 15);
+    let rows = logs.map(l => [formatDate(l.date), l.name, l.item, l.qty]);
+    doc.autoTable({ head: [['Date', 'Vendor', 'Item', 'Qty']], body: rows, startY: 25 });
     doc.save("Barni_Report.pdf");
 }
+
+function renderActivity() {
+    document.getElementById('activityLogs').innerHTML = (db.activity || []).slice().reverse().map(a => `<div class="card" style="font-size:12px;">${a}</div>`).join('');
+}
+
+function addMaster() {
+    let c = document.getElementById('setCat').value, v = document.getElementById('setVal').value;
+    if(v) { 
+        if(!db[c]) db[c] = [];
+        db[c].push(v); 
+        saveToLocalStorage(); 
+        if(window.syncToFB) window.syncToFB(); 
+        document.getElementById('setVal').value = '';
+        renderMaster(); 
+    }
+}
+
+function renderMaster() {
+    let html = '';
+    let sections = { persons: 'Employees', items: 'Items', bItems: 'Barni Items', bNames: 'Barni Vendors' };
+    Object.keys(sections).forEach(c => {
+        html += `<div class="card"><b>${sections[c]}</b><hr>`;
+        (db[c] || []).forEach((v, i) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span>${v}</span> 
+                <button class="btn-del" onclick="deleteMaster('${c}', ${i})">Delete</button>
+            </div>`;
+        });
+        html += `</div>`;
+    });
+    document.getElementById('masterLists').innerHTML = html;
+}
+
+window.deleteMaster = (cat, index) => {
+    if(confirm("Are you sure?")) {
+        db[cat].splice(index, 1);
+        saveToLocalStorage();
+        if(window.syncToFB) window.syncToFB();
+        renderMaster();
+        updateDropdowns();
+    }
+}
+
+window.addEventListener('load', () => {
+    let today = new Date().toISOString().split('T')[0];
+    if(document.getElementById('pDate')) document.getElementById('pDate').value = today;
+    if(document.getElementById('bDate')) document.getElementById('bDate').value = today;
+    let yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if(document.getElementById('bFrom')) document.getElementById('bFrom').value = yesterday.toISOString().split('T')[0];
+    if(document.getElementById('bTo')) document.getElementById('bTo').value = today;
+});
 
 updateDropdowns();
 </script>
